@@ -39,7 +39,7 @@ com.gospelanyanwu.spotflowwallet
 Create the database:
 
 ```
-createdb spotflow_wallet_test
+createdb spotflow_wallet
 ```
 
 Set environment variables:
@@ -70,7 +70,7 @@ mvn spring-boot:run
 2. Run:
 
    ```
-   ngrok http 8080
+   ngrok http 8085
    ```
 
 3. Update the Spotflow dashboard webhook URL to:
