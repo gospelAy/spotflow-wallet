@@ -1,0 +1,180 @@
+{
+  "info": {
+    "name": "Spotflow Wallet API",
+    "description": "Collection for testing the 3 Spotflow APIs and the local wallet endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8085",
+      "type": "string"
+    },
+    {
+      "key": "spotflow_base_url",
+      "value": "https://api.spotflow.co/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "secret_key",
+      "value": "YOUR_SANDBOX_SECRET_KEY_HERE",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Spotflow Direct APIs",
+      "item": [
+        {
+          "name": "1. Create Dynamic Account (Pay-In)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{secret_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currency\": \"NGN\",\n  \"accountName\": \"Gospel Anyanwu\",\n  \"amount\": 10000,\n  \"expiresIn\": 30\n}"
+            },
+            "url": {
+              "raw": "{{spotflow_base_url}}/virtual-accounts/temporary",
+              "host": ["{{spotflow_base_url}}"],
+              "path": ["virtual-accounts", "temporary"]
+            },
+            "description": "Generates a temporary bank account number the user can transfer money into. Amount is in kobo (10000 = NGN 100)."
+          }
+        },
+        {
+          "name": "2. Create Transfer (Payout)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{secret_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference\": \"WD-123456789\",\n  \"amount\": 10000,\n  \"currency\": \"NGN\",\n  \"type\": \"bank_transfer\",\n  \"source\": {\n    \"accountNumber\": \"YOUR_MAIN_ACCOUNT_NUMBER\"\n  },\n  \"destination\": {\n    \"accountNumber\": \"0123456789\",\n    \"accountName\": \"Test User\",\n    \"bankCode\": \"058\",\n    \"branchCode\": \"058\"\n  },\n  \"narrations\": \"Wallet withdrawal\"\n}"
+            },
+            "url": {
+              "raw": "{{spotflow_base_url}}/transfers",
+              "host": ["{{spotflow_base_url}}"],
+              "path": ["transfers"]
+            },
+            "description": "Sends money out to a bank account. Replace YOUR_MAIN_ACCOUNT_NUMBER with your Spotflow sandbox account number."
+          }
+        },
+        {
+          "name": "3. Get Transfer Status (Reconciliation)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{secret_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{spotflow_base_url}}/transfers/reference/WD-123456789",
+              "host": ["{{spotflow_base_url}}"],
+              "path": ["transfers", "reference", "WD-123456789"]
+            },
+            "description": "Check the status of a transfer by its reference. Replace WD-123456789 with your actual reference."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Local Wallet Endpoints",
+      "item": [
+        {
+          "name": "Fund Wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"a3f8c2d1-1234-5678-abcd-ef0123456789\",\n  \"amount\": 10000,\n  \"currency\": \"NGN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallet/fund",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "fund"]
+            },
+            "description": "Starts a Pay-In. Creates a PENDING transaction and returns a dynamic account number for the user to transfer into."
+          }
+        },
+        {
+          "name": "Withdraw from Wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"a3f8c2d1-1234-5678-abcd-ef0123456789\",\n  \"amount\": 5000,\n  \"destinationAccountNumber\": \"0123456789\",\n  \"destinationBankCode\": \"058\",\n  \"destinationAccountName\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/wallet/withdraw",
+              "host": ["{{base_url}}"],
+              "path": ["wallet", "withdraw"]
+            },
+            "description": "Deducts from the user's local wallet balance and calls Spotflow to disburse funds to their bank account."
+          }
+        },
+        {
+          "name": "Spotflow Webhook (simulate)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "webhook-id",
+                "value": "evt-unique-id-001"
+              },
+              {
+                "key": "x-spotflow-signature",
+                "value": "YOUR_COMPUTED_SIGNATURE"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"account_credit_successful\",\n  \"data\": {\n    \"reference\": \"FUND-YOUR-REFERENCE-HERE\",\n    \"amount\": 10000,\n    \"status\": \"successful\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/spotflow",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "spotflow"]
+            },
+            "description": "Simulates a Spotflow webhook notification. Replace reference with a real PENDING transaction reference from your DB. Replace webhook-id with a unique value each time to test idempotency."
+          }
+        }
+      ]
+    }
+  ]
+}
